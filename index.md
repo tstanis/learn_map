@@ -7,6 +7,10 @@ Pathfinding!  Pathfinding is a favorite problem of mine from back in my game pro
 
 The simplest map representation has been the old standard grid with spaces a walls.
 
+![Image of Board](/docimg/board.png)
+
+In this picture black squares represents walls.  White squares are empty.  Red squares are the starting point for our agent, and the green square is the goal the agent is trying to reach.
+
 ### Deep Learning Approach
 
 Intuitively if you look at a grid map, you can often immediately "see" the path without having to iterate through a set of spaces as the common algorithms do.  So, is it possible to build a deep learning model to "see" the path?  Let's investigate.
@@ -62,6 +66,41 @@ To this end, we add additional tests to each of our generated maps and throw out
 ### Tensorflow Keras 
 
 As you guessed from above, I used Keras to define the layers for my model and then Tensorflow to run the training.
+This is the parameter space for a 22x22 map.  340k parameters is a lot!
+
+```
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+conv2d (Conv2D)              (None, 22, 22, 24)        2424
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 22, 22, 24)        14424
+_________________________________________________________________
+max_pooling2d (MaxPooling2D) (None, 11, 11, 24)        0
+_________________________________________________________________
+dropout (Dropout)            (None, 11, 11, 24)        0
+_________________________________________________________________
+conv2d_2 (Conv2D)            (None, 11, 11, 48)        10416
+_________________________________________________________________
+conv2d_3 (Conv2D)            (None, 11, 11, 48)        20784
+_________________________________________________________________
+max_pooling2d_1 (MaxPooling2 (None, 5, 5, 48)          0
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 5, 5, 48)          0
+_________________________________________________________________
+flatten (Flatten)            (None, 1200)              0
+_________________________________________________________________
+dense (Dense)                (None, 242)               290642
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 242)               0
+_________________________________________________________________
+dense_1 (Dense)              (None, 5)                 1215
+=================================================================
+Total params: 339,905
+Trainable params: 339,905
+Non-trainable params: 0
+_________________________________________________________________
+```
 
 ### Visualizing Results
 
@@ -77,8 +116,7 @@ In addition to showing the map, we also want to visualize the outputs of the mod
 
 We can then combine these together into a single plot of the current map state and the agent's decision making output:
 
-
-
+![Image of Board](/docimg/mapandprediction.png)
 
 ### Training on Google Cloud ML Engine
 
