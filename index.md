@@ -174,6 +174,9 @@ This was a fun exercise in exploring pathfinding with deep learning.  Clearly de
 1.  Maps where data is uncertain.  We could simulate situations where the map changes or is intentionally wrong.  Theoretically the deep neural networks can better represent strategies for dealing with these scenarios.
 2.  Maps that are changing.
 3.  Maps where the goal is likely 
+4.  Build a model that understands history and can break out of oscilation.
+5.  Find more of the oscilation maps and focus training on them.
+6.  Fix the problem with similar optimal paths not getting credit.
 
 Other areas of related future work:
 1.  Combined path finding plus [traveling sales man](https://en.wikipedia.org/wiki/Travelling_salesman_problem) problems.
