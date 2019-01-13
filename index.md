@@ -1,10 +1,87 @@
-## Welcome to GitHub Pages
+## Deep Learning for Grid based Pathfindign
 
-You can use the [editor on GitHub](https://github.com/tstanis/learn_map/edit/master/index.md) to maintain and preview the content for your website in Markdown files.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Background
 
-### Markdown
+Pathfinding is a favorite problem of mine and is well studied in AI over the years.  There are great algorithms to learn from [Dijkstra's](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) to [A*](https://en.wikipedia.org/wiki/A*_search_algorithm).  I have implemented these many times for games, with different map representations.
+
+The simplest map representation has been a regular grid.
+
+
+### Deep Learning Approach
+
+Intuitively if you look at a grid map, you can often immediately "see" the path without having to iterate through a set of spaces as the common algorithms do.  So, is it possible to build a deep learning model that takes the same approach?
+
+I took a lot of inspiration from [this paper](https://www.sciencedirect.com/science/article/pii/S1877050918300553) although I haven't done any of the cool reinforcement parts.
+
+```markdown
+Input to the model: An NxM matrix representing the map with indications of the agent we want to control and the goal.
+Output of the model: Best best direction to move first.
+```
+
+The nice thing about definining the problem this way is that it is easy to generate trainig examples.  We just need to create some maps, run a traditional pathfinding algorithm to find the full path, and then use the first step of that as a label for the example.
+
+### Model Design
+
+Pathfinding centers around analysis of individual cells and their neighboors.  Traditional pathfinding involves visiting neighboors from the start point and exploring outward.  Along those lines, it intuitively makes sense that a convolution filtering as the start of our model would be successful as these convolution layers would be better able to represent the neighboor hoods of nodes on our grid and the associated spatial connectivity.
+
+I experimented with a few different layering approachs, but settled on a fairly standard setup that came from some of the standard MNIST hardwriting recognition models.
+
+```
+keras.layers.Conv2D(grid_size + 2, kernel_size=5, padding="Same", input_shape=[grid_size, grid_size, 4], activation='relu'),
+keras.layers.Conv2D(grid_size + 2, kernel_size=5, padding="Same", activation='relu'),
+keras.layers.MaxPooling2D(pool_size=(2, 2)),
+keras.layers.Dropout(0.25),
+
+keras.layers.Conv2D((grid_size + 2) * 2, kernel_size=3, padding="Same", activation='relu'),
+keras.layers.Conv2D((grid_size + 2) * 2, kernel_size=3, padding="Same", activation='relu'),
+keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
+keras.layers.Dropout(0.25),
+
+keras.layers.Flatten(),
+keras.layers.Dense((grid_size * grid_size)/2, activation=tf.nn.relu),
+keras.layers.Dropout(0.25), 
+keras.layers.Dense(NUM_CLASSES, activation=tf.nn.softmax)
+```
+
+I didn't do a lot of exploration here beyond taking off the shelf ideas.  In the future I'd like to do some work on hyperparameter optimization here.
+
+### Generating Training Examples
+
+I started with a simple approach to generating maps: randomly select cells a percentage of cells to be walls vs. open and then randomly select the start and end points.  This has a high probability of creating unsolvable maps (more on that latter).  
+
+The problem with this approach is that it tends to create lots of training examples that are fairly easy.  We want our model to learn to actually find paths through complex mazes, not just greedily move towards the goal. 
+
+To this end, we add additional tests to each of our generated maps and throw out ones that aren't interesting:
+- Longer paths are generally more interesting.  Setting a threshold equal to the length of one side of the map seems to work.
+- Choose paths where the first move is not in the obvious greedy direction.  I.e. if the goal is up and to the left, choose maps where the path starts down or to the right.
+
+### Tensorflow Keras 
+
+As you guessed from above, I used Keras to define the layers for my model and then Tensorflow to run the training.
+
+### Visualizing Results
+
+Using matplotlib to draw the maps turned out to be easier than I expected:
+
+```
+cmap = matplotlib.colors.ListedColormap(["white","black",'green','red'], name='from_list', N=None)
+plt.imshow(np.array(self.map).transpose(), cmap=cmap, origin="lower")
+```
+I had to transpose the map as my coordinate system and layout of the map arrays doesn't quite match what matplotlib wants.
+
+In addition to showing the map, we also want to visualize the outputs of the model.  I used an example from the [tensorflow docs](https://www.tensorflow.org/tutorials/keras/basic_classification) that shows the correct answer as blue and the predicted answer as red if it is wrong.
+
+We can then combine these together into a plot
+
+
+### Training on Google Cloud ML Engine
+
+### Learning to recognize "No Path" 
+
+## Failure Modes
+
+### Oscilation
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
