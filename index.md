@@ -131,11 +131,15 @@ Now that we have a trained model, let's use it!  This part is pretty straight fo
 3.  Update map to move agent to in the direction choice.
 4.  Repeat prediction and goal until we meet our goal or something fails.
 
-![Image of Board](/docimg/fullpath.gif)
+![Image of Board](/docimg/fullpath2.gif)
 
 ## Failure Modes
 
 ### Oscilation
+
+There are places where the system clearly fails. Because the model only considers a single move at a time, it can get stuck in an oscilating pattern where it moves to a spot and then wants to move back to the previous stop.
+
+![Image of Board](/docimg/oscilate.gif)
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
