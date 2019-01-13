@@ -7,7 +7,7 @@ Pathfinding!  Pathfinding is a favorite problem of mine from back in my game pro
 
 The simplest map representation has been the old standard grid with spaces a walls.
 
-![Image of Board](/docimg/board.png)
+![Image of Board](/docimg/fullpath.gif)
 
 In this picture black squares represents walls.  White squares are empty.  Red squares are the starting point for our agent, and the green square is the goal the agent is trying to reach.
 
