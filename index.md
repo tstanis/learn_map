@@ -62,6 +62,7 @@ The problem with this approach is that it tends to create lots of training examp
 To this end, we add additional tests to each of our generated maps and throw out ones that aren't interesting:
 - Longer paths are generally more interesting.  Setting a threshold equal to the length of one side of the map seems to work.
 - Choose paths where the first move is not in the obvious greedy direction.  I.e. if the goal is up and to the left, choose maps where the path starts down or to the right.
+- Twisty paths that have a significant number of direction changes.
 
 ### Tensorflow Keras 
 
@@ -120,7 +121,32 @@ We can then combine these together into a single plot of the current map state a
 
 ### Training on Google Cloud ML Engine
 
+I trained my model on ~2 million examples.  To do this I used Cloud ML engine to parallelize some of the training.  I ran into a few things while doing this.
+
+1.  The current Kears Tensorboard callback is hugely inefficient if your tensorboard looks is on GCS.  This was killing my training performance (and got worse when GCS started rate limiting the writes to the log).  The latest version of Keras has some options to control this, but the current Tensorflow library is not caught up yet.  For now I had to disable Tensorboard when running on Cloud ML.
+2.  For some reason all the logs for a training get deleted after the training is done.  This combined with the above tensorboard problem make it hard to tell what happened.  I've adapted the code so I can re-run the model evaluation locally to get an idea, but I don't have a good way to look at the learning curve to see whether we hit the limits.
+
 ### Learning to recognize "No Path" 
+
+One area of additional complexity is to consider maps where there is no path.  Having the model be able to recogonize these would be an added feature.  This does however seem to be a harder problem in some cases. 
+
+## Performance
+
+I evaluated with a few different evaluation types.
+
+1.  All random solvable boards.
+2.  Solvable boards that are "hard" (as defined above)
+3.  Collections of boards that represent each step along a single hard map.
+
+Results:
+```
+Test Solvable accuracy: 0.98
+Test Solvable Hard accuracy: 0.9475
+Test Solvable Long accuracy: 0.9729
+```
+These results are lower from a functional perspective then necessary.  The main reason for this is that we consider correctness to be when it follows exactly the path that Dijkstra's would create.  There are many paths, especially involving larger open "rooms" where there are two or more paths that are equally good and we shouldn't lower our accuracy based on the model choosing a different one.
+
+While the results look good from a general "machine learning" perspective of other kinds of problems, unfortunately in the real world settings they are quite poor.  Consider that any particularly interesting path in a 20x20 world is probably 20 steps long.  That means that 0.9729^20 = 0.57 chance of finding the right path every step along the way.
 
 ## Inference
 
@@ -141,32 +167,14 @@ There are places where the system clearly fails. Because the model only consider
 
 ![Image of Board](/docimg/oscilate.gif)
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+## Conclusion and Future Work
 
-```markdown
-Syntax highlighted code block
+This was a fun exercise in exploring pathfinding with deep learning.  Clearly deep learning isn't going to replace traditional pathfinding algorithms any time soon, but there are interesting areas where it might be applicable:
 
-# Header 1
-## Header 2
-### Header 3
+1.  Maps where data is uncertain.  We could simulate situations where the map changes or is intentionally wrong.  Theoretically the deep neural networks can better represent strategies for dealing with these scenarios.
+2.  Maps that are changing.
+3.  Maps where the goal is likely 
 
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/tstanis/learn_map/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+Other areas of related future work:
+1.  Combined path finding plus [traveling sales man](https://en.wikipedia.org/wiki/Travelling_salesman_problem) problems.
+2.  [Traveling Pacman problem](https://medium.com/@robertgrosse/solving-the-traveling-pacman-problem-39c0872428bc)
