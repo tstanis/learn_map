@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 import io
+from tensorflow.python.client import device_lib
+print(device_lib.list_local_devices())
 
 NUM_CLASSES = 5
 
@@ -384,20 +386,20 @@ def evaluate(model, grid_size, log_dir, eval_sz):
     model.summary()
     validation_batch = createTrainingSet(generateBatch(eval_sz, grid_size, num_allow_empty=int(eval_sz / 2)))
     solvable_validation_batch = createTrainingSet(generateBatch(eval_sz, grid_size, num_allow_empty=0))
-    hard_maps = generateHardBatch(50, grid_size, min_length=0)
+    hard_maps = generateHardBatch(eval_sz, grid_size, min_length=0)
     hard_batch = createTrainingSet(hard_maps)
     long_maps = createTrainingSet(generateLongPathStepsBatch(eval_sz, grid_size, grid_size))
 
-    predictions = model.predict(hard_batch[0], steps=50)
-    print_status(hard_batch[1], hard_maps, predictions, log_dir)
+    #predictions = model.predict(hard_batch[0], steps=50)
+    #print_status(hard_batch[1], hard_maps, predictions, log_dir)
 
-    test_loss, test_acc, cat_acc = model.evaluate(validation_batch[0], validation_batch[1], steps=eval_sz)
+    test_loss, test_acc, cat_acc = model.evaluate(validation_batch[0], validation_batch[1])
     print('Test accuracy:', test_acc)
-    test_loss, test_acc, cat_acc = model.evaluate(solvable_validation_batch[0], solvable_validation_batch[1], steps=eval_sz)
+    test_loss, test_acc, cat_acc = model.evaluate(solvable_validation_batch[0], solvable_validation_batch[1])
     print('Test Solvable accuracy:', test_acc)
-    test_loss, test_acc, cat_acc = model.evaluate(hard_batch[0], hard_batch[1], steps=eval_sz)
+    test_loss, test_acc, cat_acc = model.evaluate(hard_batch[0], hard_batch[1])
     print('Test Solvable Hard accuracy:', test_acc)
-    test_loss, test_acc, cat_acc = model.evaluate(long_maps[0], long_maps[1], steps=eval_sz)
+    test_loss, test_acc, cat_acc = model.evaluate(long_maps[0], long_maps[1])
     print('Test Solvable Long accuracy:', test_acc)
 
 def draw_navigation(model, grid_size):
