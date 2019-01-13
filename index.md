@@ -1,31 +1,34 @@
-## Deep Learning for Grid based Pathfindign
+## Deep Learning for grid based Pathfinding
 
 
 ### Background
 
-Pathfinding is a favorite problem of mine and is well studied in AI over the years.  There are great algorithms to learn from [Dijkstra's](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) to [A*](https://en.wikipedia.org/wiki/A*_search_algorithm).  I have implemented these many times for games, with different map representations.
+Pathfinding!  Pathfinding is a favorite problem of mine from back in my game programming days.  There are standard algorithms to use including the most common [Dijkstra's](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) and [A*](https://en.wikipedia.org/wiki/A*_search_algorithm).  I have implemented these many times for games, with different map representations.
 
-The simplest map representation has been a regular grid.
-
+The simplest map representation has been the old standard grid with spaces a walls.
 
 ### Deep Learning Approach
 
-Intuitively if you look at a grid map, you can often immediately "see" the path without having to iterate through a set of spaces as the common algorithms do.  So, is it possible to build a deep learning model that takes the same approach?
+Intuitively if you look at a grid map, you can often immediately "see" the path without having to iterate through a set of spaces as the common algorithms do.  So, is it possible to build a deep learning model to "see" the path?  Let's investigate.
 
 I took a lot of inspiration from [this paper](https://www.sciencedirect.com/science/article/pii/S1877050918300553) although I haven't done any of the cool reinforcement parts.
 
+Defining our problem:
+
 ```markdown
-Input to the model: An NxM matrix representing the map with indications of the agent we want to control and the goal.
-Output of the model: Best best direction to move first.
+Input: An NxM matrix representing the map.  Matrix entires are one hot vectors indicating empty, wall, agent, or goal.
+Output: Best best direction to move first.
 ```
 
-The nice thing about definining the problem this way is that it is easy to generate trainig examples.  We just need to create some maps, run a traditional pathfinding algorithm to find the full path, and then use the first step of that as a label for the example.
+The nice thing about definining the problem this way is that it is easy to generate training examples.  We just need to create some maps, run a traditional pathfinding algorithm to find the full path, and then use the first step of that as a label for the example.
+
+I started with 10x10 maps, but this doesn't let us get into interesting examples where greedy search doesn't work.
 
 ### Model Design
 
-Pathfinding centers around analysis of individual cells and their neighboors.  Traditional pathfinding involves visiting neighboors from the start point and exploring outward.  Along those lines, it intuitively makes sense that a convolution filtering as the start of our model would be successful as these convolution layers would be better able to represent the neighboor hoods of nodes on our grid and the associated spatial connectivity.
+Pathfinding centers around analysis of individual cells and their neighboors.  Traditional pathfinding involves visiting neighboors from the start point and exploring outward.  It intuitively makes sense that a convolution filter as the start of our model would be successful as these convolution layers would be better able to represent the neighboor hoods of nodes on our grid and the associated spatial connectivity.
 
-I experimented with a few different layering approachs, but settled on a fairly standard setup that came from some of the standard MNIST hardwriting recognition models.
+I experimented with a few different layering approachs, but settled on a fairly standard setup that came from some of the standard MNIST hardwriting recognition models.  This layering approach produces far fewer parameters than having just a few fully connected dense layers.
 
 ```
 keras.layers.Conv2D(grid_size + 2, kernel_size=5, padding="Same", input_shape=[grid_size, grid_size, 4], activation='relu'),
@@ -72,7 +75,9 @@ I had to transpose the map as my coordinate system and layout of the map arrays 
 
 In addition to showing the map, we also want to visualize the outputs of the model.  I used an example from the [tensorflow docs](https://www.tensorflow.org/tutorials/keras/basic_classification) that shows the correct answer as blue and the predicted answer as red if it is wrong.
 
-We can then combine these together into a plot
+We can then combine these together into a single plot of the current map state and the agent's decision making output:
+
+
 
 
 ### Training on Google Cloud ML Engine
