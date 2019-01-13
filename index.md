@@ -20,17 +20,17 @@ I took a lot of inspiration from [this paper](https://www.sciencedirect.com/scie
 Defining our problem:
 
 ```markdown
-Input: An NxM matrix representing the map.  Matrix entires are one hot vectors indicating empty, wall, agent, or goal.
+Input: An NxM matrix representing the map.  Matrix entries are one hot vectors indicating empty, wall, agent, or goal.
 Output: Best best direction to move first.
 ```
 
-The nice thing about definining the problem this way is that it is easy to generate training examples.  We just need to create some maps, run a traditional pathfinding algorithm to find the full path, and then use the first step of that as a label for the example.
+The nice thing about defining the problem this way is that it is easy to generate training examples.  We just need to create some maps, run a traditional pathfinding algorithm to find the full path, and then use the first step of that as a label for the example.
 
 I started with 10x10 maps, but this doesn't let us get into interesting examples where greedy search doesn't work.  20x20 maps are far more interesting and have opportunities for open rooms, false turns, and other interesting features.
 
 ### Model Design
 
-Pathfinding centers around analysis of individual cells and their neighboors.  Traditional pathfinding involves visiting neighboors from the start point and exploring outward.  It intuitively makes sense that a convolution filter as the start of our model would be successful as these convolution layers would be better able to represent the neighboor hoods of nodes on our grid and the associated spatial connectivity.
+Pathfinding centers around analysis of individual cells and their neighbors.  Traditional pathfinding involves visiting neighbors from the start point and exploring outward.  It intuitively makes sense that a convolution filter as the start of our model would be successful as these convolution layers would be better able to represent the neighborhoods of nodes on our grid and the associated spatial connectivity.
 
 I experimented with a few different layering approachs, but settled on a fairly standard setup that came from some of the standard MNIST hardwriting recognition models.  This layering approach produces far fewer parameters than having just a few fully connected dense layers.
 
@@ -128,7 +128,7 @@ I trained my model on ~2 million examples.  To do this I used Cloud ML engine to
 
 ### Learning to recognize "No Path" 
 
-One area of additional complexity is to consider maps where there is no path.  Having the model be able to recogonize these would be an added feature.  This does however seem to be a harder problem in some cases. 
+One area of additional complexity is to consider maps where there is no path.  Having the model be able to recognize these would be an added feature.  This does however seem to be a harder problem in some cases. 
 
 ## Performance
 
@@ -165,15 +165,15 @@ Watching the model run there are few things that I have noticed.
 
 1.  The model is really good at understanding walls vs. open spaces.  I attribute this to the convolutions.
 2.  Non greedy behavior is clearly observable.  The model doesn't hesitate to make moves that go away from the goal.
-3.  It is interesting to watcht the level of certainty the model has in different places.  For example, as the agent is at a key decision point between two long routes that might reach the goal.  ![Image of Board](/docimg/uncertain.gif)
+3.  It is interesting to watch the level of certainty the model has in different places.  For example, as the agent is at a key decision point between two long routes that might reach the goal.  ![Image of Board](/docimg/uncertain.gif)
 In the animation above, watch around step 3-5 as the agent is unsure whether to go down/left into the wrong area or up/right to the correct area.
 4.  Open diagonals appear to confuse the model?  This is just a guess.
 
 ## Failure Modes
 
-### Oscilation
+### Oscillation
 
-There are places where the system clearly fails. Because the model only considers a single move at a time, it can get stuck in an oscilating pattern where it moves to a spot and then wants to move back to the previous stop.
+There are places where the system clearly fails. Because the model only considers a single move at a time, it can get stuck in an oscillating pattern where it moves to a spot and then wants to move back to the previous stop.
 
 ![Image of Board](/docimg/oscilate.gif)
 
@@ -184,8 +184,8 @@ This was a fun exercise in exploring pathfinding with deep learning.  Clearly de
 1.  Maps where data is uncertain.  We could simulate situations where the map changes or is intentionally wrong.  Theoretically the deep neural networks can better represent strategies for dealing with these scenarios.
 2.  Maps that are changing.
 3.  Maps where the goal is likely 
-4.  Build a model that understands history and can break out of oscilation.
-5.  Find more of the oscilation maps and focus training on them.
+4.  Build a model that understands history and can break out of oscillation.
+5.  Find more of the oscillation maps and focus training on them.
 6.  Fix the problem with similar optimal paths not getting credit.
 
 Other areas of related future work:
