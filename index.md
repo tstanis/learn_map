@@ -159,6 +159,16 @@ Now that we have a trained model, let's use it!  This part is pretty straight fo
 
 ![Image of Board](/docimg/fullpath2.gif)
 
+## Qualitative Analysis
+
+Watching the model run there are few things that I have noticed.
+
+1.  The model is really good at understanding walls vs. open spaces.  I attribute this to the convolutions.
+2.  Non greedy behavior is clearly observable.  The model doesn't hesitate to make moves that go away from the goal.
+3.  It is interesting to watcht the level of certainty the model has in different places.  For example, as the agent is at a key decision point between two long routes that might reach the goal.  ![Image of Board](/docimg/uncertain.gif)
+In the animation above, watch around step 3-5 as the agent is unsure whether to go down/left into the wrong area or up/right to the correct area.
+4.  Open diagonals appear to confuse the model?  This is just a guess.
+
 ## Failure Modes
 
 ### Oscilation
