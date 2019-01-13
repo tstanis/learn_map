@@ -1,0 +1,25 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <div id='area'>
+            <img id='display_img'>
+        </div>
+        <script>
+            var area = document.getElementById('area');
+            var area = document.getElementById('display_img');
+            var frame_num = 0;
+            var img_num = 0;
+            function drawFrame() {
+                frame_num += 1;
+                if (frame_num % 60 == 0) {
+                    display_img.src = 'img/navigate-' + img_num + '.png'
+                    img_num += 1
+                }
+                window.requestAnimationFrame(drawFrame);
+            }
+            window.requestAnimationFrame(drawFrame);
+        </script>
+    </body>
+</html>
