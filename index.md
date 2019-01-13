@@ -26,7 +26,7 @@ Output: Best best direction to move first.
 
 The nice thing about definining the problem this way is that it is easy to generate training examples.  We just need to create some maps, run a traditional pathfinding algorithm to find the full path, and then use the first step of that as a label for the example.
 
-I started with 10x10 maps, but this doesn't let us get into interesting examples where greedy search doesn't work.
+I started with 10x10 maps, but this doesn't let us get into interesting examples where greedy search doesn't work.  20x20 maps are far more interesting and have opportunities for open rooms, false turns, and other interesting features.
 
 ### Model Design
 
