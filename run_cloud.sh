@@ -1,4 +1,5 @@
- gcloud ml-engine jobs submit training learn_map_15 \
+#!/bin/bash 
+gcloud ml-engine jobs submit training learn_map_15 \
     --job-dir=gs://learn-map-227816-mlengine/learn_map_15 \
     --module-name trainer.task \
     --packages=dist/learn_map-0.1.tar.gz \
