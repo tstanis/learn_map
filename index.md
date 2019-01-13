@@ -7,7 +7,7 @@ Pathfinding!  Pathfinding is a favorite problem of mine from back in my game pro
 
 The simplest map representation has been the old standard grid with spaces a walls.
 
-![Image of Board](/docimg/board.png)
+![Image of Board](/docimg/fullpath.gif)
 
 In this picture black squares represents walls.  White squares are empty.  Red squares are the starting point for our agent, and the green square is the goal the agent is trying to reach.
 
@@ -121,6 +121,17 @@ We can then combine these together into a single plot of the current map state a
 ### Training on Google Cloud ML Engine
 
 ### Learning to recognize "No Path" 
+
+## Inference
+
+Now that we have a trained model, let's use it!  This part is pretty straight forward.
+
+1.  Create map
+2.  Predict direction with model on map
+3.  Update map to move agent to in the direction choice.
+4.  Repeat prediction and goal until we meet our goal or something fails.
+
+![Image of Board](/docimg/fullpath.gif)
 
 ## Failure Modes
 
