@@ -54,7 +54,7 @@ def train_and_evaluate(args):
 
     model = None
     if args.load_model:
-      print("Loading Module ...")
+      print("Loading Module !!!...")
       model_file = file_io.FileIO(args.load_model, mode='rb')
       temp_model_location = LEARN_MAP_MODEL
       temp_model_file = open(temp_model_location, 'wb')
@@ -65,13 +65,16 @@ def train_and_evaluate(args):
 
     #print("Train: " + str(args.train))
     if args.train:
-      model = learn.train(model, args.grid_size, callbacks, log_dir, args.train_steps, args.train_batch_size, args.num_epochs, args.eval_batch_size)
+      model = learn.train(model, args.grid_size, callbacks, log_dir, args.train_steps, 
+        args.train_batch_size, args.num_epochs, args.eval_batch_size,
+        load_map_filename=args.load_map_filename)
 
     if args.evaluate:
       learn.evaluate(model, args.grid_size, log_dir, args.eval_batch_size)
 
     if args.navigate:
-      learn.draw_navigation(model, args.grid_size)
+      learn.draw_navigation(model, args.grid_size, save_map_filename=args.save_map_filename,
+        load_map_filename=args.load_map_filename)
 
     if args.train:
       print("Saving: " + LEARN_MAP_MODEL)
@@ -157,5 +160,15 @@ if __name__ == '__main__':
       type=str,
       default=None,
       help="Model to start with")
+    parser.add_argument(
+      '--save-map-filename',
+      type=str,
+      default=None
+    )
+    parser.add_argument(
+      '--load-map-filename',
+      type=str,
+      default=None
+    )
     args, _ = parser.parse_known_args()
     train_and_evaluate(args)

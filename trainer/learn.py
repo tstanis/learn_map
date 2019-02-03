@@ -55,6 +55,7 @@ RIGHT = 4
 
 DIRECTION_MAP = {UP : 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT : 'RIGHT', NO_DIR:'NONE'}
 DIRECTION_DELTA = {UP: (0, 1), DOWN: (0, -1), LEFT: (-1, 0), RIGHT:(1, 0), NO_DIR: (0, 0)}
+MAP_CHARS = {'X':WALL, ' ':EMPTY, 'G':GOAL, 'A': AGENT}
 
 class Map:
     def __init__(self, width, height):
@@ -94,6 +95,33 @@ class Map:
             if self.map[x][y] == EMPTY:
                 self.map[x][y] = WALL
                 num_walls -= 1
+
+    def randomize_from_proto(self, proto_map):
+        # randomly swap N% of the squares
+        self.width = proto_map.width
+        self.height = proto_map.height
+        self.goal = proto_map.goal
+        self.agent = proto_map.agent
+        self.map = copy.deepcopy(proto_map.map)
+        for _ in range(0, int((self.width-1) * (self.height-1) * 0.05)):
+            x = rand.randrange(1, self.width - 1)
+            x2 = rand.randrange(1, self.width - 1)
+            y = rand.randrange(1, self.height - 1)
+            y2 = rand.randrange(1, self.height - 1)
+            if x != x2 or y != y2:
+                save = self.map[x][y]
+                self.map[x][y] = self.map[x2][y2]
+                self.map[x2][y2] = save
+                if self.map[x][y] == GOAL:
+                    self.goal = [x, y]
+                if self.map[x2][y2] == GOAL:
+                    self.goal = [x2, y2]
+                if self.map[x][y] == AGENT:
+                    self.agent = [x,y]
+                if self.map[x2][y2] == AGENT:
+                    self.agent = [x2, y2]
+
+            
     
     def is_passable(self, pos):
         return self.map[pos[0]][pos[1]] != WALL
@@ -177,13 +205,15 @@ class Map:
         else:
             return False
 
-    def print(self):
+    def to_string(self, show_path=False):
         width = len(self.map)
         height = len(self.map[0])
-        best_path = self.find_best_path()
-        print("".join(["#" for x in range(0, width + 2)]))
+        best_path = None
+        lines = []
+        if show_path:
+            best_path = self.find_best_path()
         for y in range(height - 1, -1, -1):
-            line = "#"
+            line = ""
             for x in range(0, width):
                 cell = self.map[x][y]
                 if cell == EMPTY:
@@ -197,8 +227,15 @@ class Map:
                     line += "G"
                 elif cell == AGENT:
                     line += "A"
-            print(line + "#")
-        print("".join(["#" for x in range(0, width + 2)]))
+            lines.append(line)
+        return lines
+
+    def print(self):
+        width = len(self.map)
+        height = len(self.map[0])
+        best_path = self.find_best_path()
+        for line in self.to_string(show_path=True):
+            print(line)
         print("Agent: " + str(self.agent) + " Goal: " + str(self.goal))
         print(str(best_path))
         print("Hard Path: " + str(hard_path(self, best_path)))
@@ -234,6 +271,33 @@ class Map:
         self.plot_map_with_prediction(predictions_array, label)
         plt.savefig(filename, format='png')
 
+    def save(self, filename):
+        print("Saving map to " + filename)
+        with open(filename, 'w') as fp:
+            fp.writelines([line + "\n" for line in self.to_string(show_path=False)])
+
+    def load(self, filename):
+        lines = []
+        with open(filename, 'r') as fp:
+            for line in fp:
+                lines.append(line)
+        self.height = len(lines)
+        self.width = len(lines[0].strip())
+        self.best_path = None
+        self.map = [[0 for y in range(0, self.height)] for x in range(0, self.width)]
+        for y in range(0, self.height):
+            line = lines[(self.height - 1) - y]
+            for x in range(0, self.width):
+                self.map[x][y] = MAP_CHARS[line[x]]
+                if line[x] == 'G':
+                    self.goal = [x, y]
+                elif line[x] == 'A':
+                    self.agent = [x, y]
+        print("Loaded:")
+        self.print()
+        
+
+
 def path_direction_changes(path):
     num_changes = 0
     last_dir = (0, 0)
@@ -259,20 +323,25 @@ def hard_path(map, path):
     else:
         return False
 
-def generateLongPathStepsBatch(batchSize, grid_size, min_length):
+def generateLongPathStepsBatch(batchSize, grid_size, min_length, min_segment_sz=1, proto_map=None):
+    print("Generating Long Path Steps Batch...")
     maps = []
     gen = 0
     gen_good = 0
     while len(maps) < batchSize:
         gen += 1
         map = Map(grid_size, grid_size)
-        map.randomize(0.50, True)
+        if proto_map:
+            map.randomize_from_proto(proto_map)
+            #map.print()
+        else:
+            map.randomize(0.50, True)
         path = map.find_best_path()
         if not path or len(path) < min_length or not hard_path(map, path):
             continue
         gen_good += 1
         # Generate a copy of the map with every point along the path
-        while len(path) > 1:
+        while len(path) > min_segment_sz:
             next_map = copy.deepcopy(map)
             next_map.move_agent_to(path[0])
             maps.append(next_map)
@@ -359,19 +428,24 @@ def print_status(labels, maps, predictions, log_dir):
     print("Performance = %d/%d" % (correct, len(labels)))
     writer.close()
 
-def train(start_model, grid_size, callbacks, log_dir, num_batches, batch_sz, epochs, eval_sz):
+def train(start_model, grid_size, callbacks, log_dir, num_batches, batch_sz, epochs, eval_sz, load_map_filename):
     if start_model:
         model = start_model
     else:
         model = build_model(grid_size)
 
+    proto_map = None
+    if load_map_filename:
+        proto_map = Map(grid_size,grid_size)
+        proto_map.load(load_map_filename)
+
     #validation_batch = createTrainingSet(generateBatch(eval_sz, grid_size, num_allow_empty=int(eval_sz / 2)))
-    validation_batch = createTrainingSet(generateLongPathStepsBatch(eval_sz, grid_size, grid_size))
+    validation_batch = createTrainingSet(generateLongPathStepsBatch(eval_sz, grid_size, grid_size, proto_map=proto_map, min_segment_sz=10))
 
     for i in range(0, num_batches):
         print("Training Batch " + str(i) + "/" + str(num_batches))
         #batch = createTrainingSet(generateBatch(batch_sz, grid_size, num_allow_empty=int(batch_sz / 10)))
-        batch = createTrainingSet(generateLongPathStepsBatch(batch_sz, grid_size, grid_size))
+        batch = createTrainingSet(generateLongPathStepsBatch(batch_sz, grid_size, grid_size, proto_map=proto_map, min_segment_sz=10))
         history = model.fit(batch[0],
                             batch[1],
                             epochs=epochs,
@@ -382,13 +456,13 @@ def train(start_model, grid_size, callbacks, log_dir, num_batches, batch_sz, epo
     
     return model
 
-def evaluate(model, grid_size, log_dir, eval_sz):
+def evaluate(model, grid_size, log_dir, eval_sz, proto_map=None):
     model.summary()
     validation_batch = createTrainingSet(generateBatch(eval_sz, grid_size, num_allow_empty=int(eval_sz / 2)))
     solvable_validation_batch = createTrainingSet(generateBatch(eval_sz, grid_size, num_allow_empty=0))
     hard_maps = generateHardBatch(eval_sz, grid_size, min_length=0)
     hard_batch = createTrainingSet(hard_maps)
-    long_maps = createTrainingSet(generateLongPathStepsBatch(eval_sz, grid_size, grid_size))
+    long_maps = createTrainingSet(generateLongPathStepsBatch(eval_sz, grid_size, grid_size, min_segment_sz=10))
 
     #predictions = model.predict(hard_batch[0], steps=50)
     #print_status(hard_batch[1], hard_maps, predictions, log_dir)
@@ -402,10 +476,17 @@ def evaluate(model, grid_size, log_dir, eval_sz):
     test_loss, test_acc, cat_acc = model.evaluate(long_maps[0], long_maps[1])
     print('Test Solvable Long accuracy:', test_acc)
 
-def draw_navigation(model, grid_size):
+def draw_navigation(model, grid_size, load_map_filename=None, save_map_filename=None):
     print("Navigate...")
-    hard_maps = generateBatch(1, grid_size, num_allow_empty=0, min_length=grid_size)
-    map = hard_maps[0]
+    map = None
+    if load_map_filename:
+        map = Map(grid_size,grid_size)
+        map.load(load_map_filename)
+    else:
+        hard_maps = generateBatch(1, grid_size, num_allow_empty=0, min_length=grid_size)
+        map = hard_maps[0]
+    if save_map_filename:
+        map.save(save_map_filename)
 
     frame_num = 0
     while map.agent[0] != map.goal[0] or map.agent[1] != map.goal[1]:
